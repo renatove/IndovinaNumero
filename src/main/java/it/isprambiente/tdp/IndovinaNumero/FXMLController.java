@@ -19,7 +19,6 @@ public class FXMLController {
 	private final int TMAX = 8;
 	
 	private int segreto;
-	private int tentativiRimasti;
 	private int tentativiEseguiti;
 	private boolean inGioco = false;
 	
@@ -52,7 +51,6 @@ public class FXMLController {
     void doNuovaPartita(ActionEvent event) {
     	//inizializza il numero da indovinare
     	this.segreto = (int)(Math.random() * NMAX) + 1 ;
-    	this.tentativiRimasti = 8;
     	this.tentativiEseguiti = 0;
     	this.inGioco = true;
     	
