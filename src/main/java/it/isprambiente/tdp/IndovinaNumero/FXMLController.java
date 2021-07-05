@@ -5,7 +5,10 @@
 package it.isprambiente.tdp.IndovinaNumero;
 
 import java.net.URL;
+import java.security.InvalidParameterException;
 import java.util.ResourceBundle;
+
+import it.isprambiente.tdp.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -15,12 +18,7 @@ import javafx.scene.layout.HBox;
 
 public class FXMLController {
 	
-	private final int NMAX = 100;
-	private final int TMAX = 8;
-	
-	private int segreto;
-	private int tentativiEseguiti;
-	private boolean inGioco = false;
+	private Model model;
 	
 
     @FXML // ResourceBundle that was given to the FXMLLoader
@@ -49,13 +47,12 @@ public class FXMLController {
 
     @FXML
     void doNuovaPartita(ActionEvent event) {
-    	//inizializza il numero da indovinare
-    	this.segreto = (int)(Math.random() * NMAX) + 1 ;
-    	this.tentativiEseguiti = 0;
-    	this.inGioco = true;
+    	//inizio la partita
+    	this.model.nuovaPartita();
     	
-    	this.txtTentativi.setText(Integer.toString(TMAX));
-    	
+    	// gestisce l'interfaccia
+    	this.txtRisultato.clear();
+    	this.txtTentativi.setText(Integer.toString(this.model.getTMAX()));  	
     	this.lyoTentativo.setDisable(false);
     	
     }
@@ -63,9 +60,6 @@ public class FXMLController {
     @FXML
     void doTentativo(ActionEvent event) {
     	//lettura dell'input utente
-    	if(!inGioco) {
-    		this.txtRisultato.appendText("ATTENZIONE: Non sei in gioco.\n");
-    	}
     	String ts = this.txtNumero.getText();
     	int tentativo;
     	try {
@@ -78,33 +72,37 @@ public class FXMLController {
     	
     	//pulizia casella di input numero
     	this.txtNumero.setText("");
-    	
-    	this.tentativiEseguiti++;
-    	this.txtTentativi.setText(Integer.toString(TMAX-this.tentativiEseguiti));
-    	this.txtRisultato.appendText("Tentativo num. " + this.tentativiEseguiti + ": Hai inserito il numero: "+ tentativo + "\n");
+    
+    	this.txtRisultato.setText("Tentativo num. " + this.model.getTentativiEseguiti() + ": Hai inserito il numero: "+ tentativo + "\n");
 
-    	if(tentativo == this.segreto) {
+    	int result;
+    	
+    	try {
+	    	result = this.model.tentativo(tentativo) ;
+    	} catch (IllegalStateException se) {
+    		this.txtRisultato.setText(se.getMessage());
+    		this.lyoTentativo.setDisable(true);
+    		return;
+    	} catch (InvalidParameterException pe) {
+    		this.txtRisultato.setText(pe.getMessage());
+    		return;
+    	}
+  
+      	this.txtTentativi.setText(Integer.toString(this.model.getTMAX()-this.model.getTentativiEseguiti()));
+        
+    	if(result == 0) {
     		// Hai vinto
-    		this.txtRisultato.appendText("BRAVO: Hai indovinato il numero segreto con "+ this.tentativiEseguiti +" tentativi.\n");
-    		this.inGioco = false;
+    		this.txtRisultato.setText("BRAVO: Hai indovinato il numero segreto con "+ this.model.getTentativiEseguiti() +" tentativi.\n");
     		this.lyoTentativo.setDisable(true);
     		return;
-    	}
-    	
-    	// controllo i tentativi
-    	if (this.tentativiEseguiti == TMAX) {
-    		this.txtRisultato.appendText("HAI PERSO: Tentativi esauriti. Il numero segreto era: "+ this.segreto+"\n");
-    		this.inGioco = false;
-    		this.lyoTentativo.setDisable(true);
+    	} else if (result < 0) {
+    		this.txtRisultato.setText("ATTENZIONE: Tentativo troppo basso.\n");
     		return;
-    	}
-    	
-    	//controllo se il numero inserito e minoro o maggiore di segreto
-    	if (tentativo < this.segreto) {
-    		this.txtRisultato.appendText("ATTENZIONE: Tentativo troppo basso.\n");
     	} else {
-    		this.txtRisultato.appendText("ATTENZIONE: Tentativo troppo alto.\n");
+    		this.txtRisultato.setText("ATTENZIONE: Tentativo troppo alto.\n");
+    		return;
     	}
+    	
     	
     }
 
@@ -116,6 +114,10 @@ public class FXMLController {
         assert btnProva != null : "fx:id=\"btnProva\" was not injected: check your FXML file 'Scene.fxml'.";
         assert txtRisultato != null : "fx:id=\"txtRisultato\" was not injected: check your FXML file 'Scene.fxml'.";
 
+    }
+    
+    public void setModel(Model model) {
+    	this.model = model;
     }
 }
 
